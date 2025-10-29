@@ -30,6 +30,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getConfig: () => ipcRenderer.invoke('get-config'),
   updateConfig: (config) => ipcRenderer.invoke('update-config', config),
   
+  // === 폴더 선택 ===
+  selectFolder: (options) => ipcRenderer.invoke('select-folder', options),
+  
   // === Python Worker 통신 ===
   startPythonWorker: () => ipcRenderer.invoke('start-python-worker'),
   stopPythonWorker: () => ipcRenderer.invoke('stop-python-worker'),
@@ -46,6 +49,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   onJobProgress: (callback) => {
     ipcRenderer.on('job-progress', callback);
+  },
+  
+  onConfigUpdated: (callback) => {
+    ipcRenderer.on('config-updated', callback);
+  },
+  
+  onFileDetected: (callback) => {
+    ipcRenderer.on('file-detected', callback);
   },
   
   // 이벤트 리스너 제거

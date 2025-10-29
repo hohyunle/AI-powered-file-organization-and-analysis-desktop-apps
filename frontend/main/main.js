@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { spawn } = require('child_process');
 
@@ -9,6 +9,19 @@ let mainWindow;
 let settingsWindow = null;
 let fileListWindow = null;
 let pythonWorker = null;
+
+// 현재 설정 저장
+let currentConfig = {
+  monitoringFolder: 'C:/Downloads',
+  movingFolder: 'C:/Documents/정리된 파일',
+  threshold: 50,
+  autoOrganize: true
+};
+
+// 설정 가져오기 함수
+async function getConfig() {
+  return currentConfig;
+}
 
 function createWindow() {
   // 메인 윈도우 생성
@@ -159,12 +172,62 @@ ipcMain.handle('get-app-version', () => {
 // === 대시보드 데이터 ===
 ipcMain.handle('get-dashboard-stats', async () => {
   // TODO: 실제 데이터베이스에서 통계 가져오기
-  return {
-    monitoringFolder: 'C:/Downloads',
-    pendingFiles: 47,
-    lastOrganized: '2시간 전',
-    autoOrganizeEnabled: true
-  };
+  const fs = require('fs');
+  const path = require('path');
+  
+  try {
+    // 설정에서 폴더 경로 가져오기
+    const config = await getConfig();
+    const monitoringFolder = config.monitoringFolder || 'C:/Downloads';
+    const movingFolder = config.movingFolder || 'C:/Documents/정리된 파일';
+    
+    // 모니터링 폴더의 파일 개수 계산
+    let pendingFiles = 0;
+    try {
+      if (fs.existsSync(monitoringFolder)) {
+        const files = fs.readdirSync(monitoringFolder);
+        pendingFiles = files.filter(file => {
+          const filePath = path.join(monitoringFolder, file);
+          return fs.statSync(filePath).isFile();
+        }).length;
+      }
+    } catch (error) {
+      console.error('모니터링 폴더 파일 개수 계산 오류:', error);
+    }
+    
+    // 정리 지정 폴더의 파일 개수 계산
+    let organizedFiles = 0;
+    try {
+      if (fs.existsSync(movingFolder)) {
+        const files = fs.readdirSync(movingFolder);
+        organizedFiles = files.filter(file => {
+          const filePath = path.join(movingFolder, file);
+          return fs.statSync(filePath).isFile();
+        }).length;
+      }
+    } catch (error) {
+      console.error('정리 지정 폴더 파일 개수 계산 오류:', error);
+    }
+    
+    return {
+      monitoringFolder: monitoringFolder,
+      movingFolder: movingFolder,
+      pendingFiles: pendingFiles,
+      organizedFiles: organizedFiles,
+      lastOrganized: '2시간 전', // TODO: 실제 마지막 정리 시간
+      autoOrganizeEnabled: config.autoOrganize || true
+    };
+  } catch (error) {
+    console.error('대시보드 통계 가져오기 오류:', error);
+    return {
+      monitoringFolder: 'C:/Downloads',
+      movingFolder: 'C:/Documents/정리된 파일',
+      pendingFiles: 0,
+      organizedFiles: 0,
+      lastOrganized: '알 수 없음',
+      autoOrganizeEnabled: true
+    };
+  }
 });
 
 // === 파일 정리 관련 ===
@@ -201,9 +264,101 @@ ipcMain.handle('open-settings', async () => {
 
 // === 파일 관리 관련 ===
 ipcMain.handle('get-file-list', async (event, filters = {}) => {
-  // TODO: 파일 목록 가져오기 (필터 적용)
-  console.log('파일 목록 가져오기:', filters);
-  return { success: true, files: [] };
+  console.log('파일 목록 요청 받음:', filters);
+  const fs = require('fs');
+  const path = require('path');
+  
+  try {
+    // 현재 설정에서 모니터링 폴더 가져오기
+    const config = await getConfig();
+    const monitoringFolder = config.monitoringFolder || 'C:/Downloads';
+    console.log('모니터링 폴더:', monitoringFolder);
+    
+    if (!fs.existsSync(monitoringFolder)) {
+      return {
+        success: true,
+        files: [],
+        stats: {
+          total: 0,
+          images: 0,
+          documents: 0,
+          videos: 0,
+          others: 0
+        }
+      };
+    }
+    
+    // 폴더의 파일 목록 읽기
+    const files = fs.readdirSync(monitoringFolder);
+    console.log('폴더에서 읽은 파일들:', files);
+    const fileList = [];
+    const stats = {
+      total: 0,
+      images: 0,
+      documents: 0,
+      videos: 0,
+      others: 0
+    };
+    
+    files.forEach((fileName, index) => {
+      const filePath = path.join(monitoringFolder, fileName);
+      const fileStats = fs.statSync(filePath);
+      
+      // 파일만 처리 (폴더 제외)
+      if (fileStats.isFile()) {
+        const extension = path.extname(fileName).toLowerCase();
+        let type = 'other';
+        
+        // 파일 타입 분류
+        if (['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'].includes(extension)) {
+          type = 'image';
+          stats.images++;
+        } else if (['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.txt', '.hwp'].includes(extension)) {
+          type = 'document';
+          stats.documents++;
+        } else if (['.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.webm'].includes(extension)) {
+          type = 'video';
+          stats.videos++;
+        } else {
+          stats.others++;
+        }
+        
+        stats.total++;
+        
+        fileList.push({
+          id: `file_${index}`,
+          name: fileName,
+          path: filePath,
+          size: fileStats.size,
+          type: type,
+          status: 'pending',
+          created: fileStats.birthtime.toISOString().split('T')[0],
+          modified: fileStats.mtime.toISOString().split('T')[0]
+        });
+      }
+    });
+    
+    console.log(`파일 목록 로드 완료: ${fileList.length}개 파일`);
+    return {
+      success: true,
+      files: fileList,
+      stats: stats
+    };
+    
+  } catch (error) {
+    console.error('파일 목록 로드 실패:', error);
+    return {
+      success: false,
+      files: [],
+      stats: {
+        total: 0,
+        images: 0,
+        documents: 0,
+        videos: 0,
+        others: 0
+      }
+    };
+  }
 });
 
 ipcMain.handle('get-file-analysis', async (event, fileId) => {
@@ -227,20 +382,52 @@ ipcMain.handle('undo-job', async (event, jobId) => {
 
 // === 설정 관리 ===
 ipcMain.handle('get-config', async () => {
-  // TODO: 현재 설정 가져오기
   console.log('설정 가져오기');
-  return {
-    monitoringFolder: 'C:/Downloads',
-    movingFolder: 'C:/Documents/정리된 파일',
-    threshold: 50,
-    autoOrganize: true
-  };
+  return currentConfig;
 });
 
 ipcMain.handle('update-config', async (event, config) => {
-  // TODO: 설정 업데이트
+  // 설정 업데이트
   console.log('설정 업데이트:', config);
+  
+  // 현재 설정 업데이트
+  currentConfig = { ...currentConfig, ...config };
+  
+  // 메인 윈도우로 설정 변경 알림 전송
+  if (mainWindow) {
+    mainWindow.webContents.send('config-updated', currentConfig);
+  }
+  
   return { success: true };
+});
+
+// === 폴더 선택 ===
+ipcMain.handle('select-folder', async (event, options = {}) => {
+  try {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      properties: ['openDirectory'],
+      title: options.title || '폴더 선택',
+      defaultPath: options.defaultPath || 'C:/'
+    });
+    
+    if (!result.canceled && result.filePaths.length > 0) {
+      return { 
+        success: true, 
+        folderPath: result.filePaths[0] 
+      };
+    } else {
+      return { 
+        success: false, 
+        error: '폴더 선택이 취소되었습니다.' 
+      };
+    }
+  } catch (error) {
+    console.error('폴더 선택 오류:', error);
+    return { 
+      success: false, 
+      error: error.message 
+    };
+  }
 });
 
 // === Python Worker 통신 ===
@@ -257,7 +444,12 @@ ipcMain.handle('start-python-worker', async () => {
     const workerPath = path.join(__dirname, '../../backend/main.py');
     pythonWorker = spawn('python', [workerPath], {
       cwd: path.join(__dirname, '../../backend'),
-      stdio: ['pipe', 'pipe', 'pipe']
+      stdio: ['pipe', 'pipe', 'pipe'],
+      env: {
+        ...process.env,
+        PYTHONIOENCODING: 'utf-8',
+        PYTHONLEGACYWINDOWSSTDIO: '1'
+      }
     });
 
     // Python Worker 출력 처리
@@ -274,6 +466,16 @@ ipcMain.handle('start-python-worker', async () => {
           }
         } catch (e) {
           console.error('상태 데이터 파싱 오류:', e);
+        }
+      }
+      
+      // 파일 감지 메시지 처리
+      if (output.includes('새 파일 감지:')) {
+        const match = output.match(/새 파일 감지: (.+)/);
+        if (match && mainWindow) {
+          console.log('새 파일 감지됨:', match[1]);
+          // 메인 윈도우에 새 파일 알림 전송
+          mainWindow.webContents.send('file-detected', { path: match[1] });
         }
       }
     });

@@ -7,6 +7,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     
     // 이벤트 리스너 등록
     setupEventListeners();
+    
+    // 설정 변경 이벤트 리스너 등록
+    setupConfigUpdateListener();
+    
+    // 파일 개수 주기적 업데이트 (30초마다)
+    setInterval(updateFileCount, 30000);
+    
+    // 파일 감지 이벤트 리스너 등록
+    setupFileDetectionListener();
 });
 
 // 대시보드 데이터 로드
@@ -31,44 +40,58 @@ async function loadDashboardData() {
 
 // 이벤트 리스너 설정
 function setupEventListeners() {
+    console.log('이벤트 리스너 설정 시작');
+    
     // 설정 버튼
-    document.getElementById('settings-btn').addEventListener('click', async () => {
-        console.log('설정 버튼 클릭');
-        try {
-            await window.electronAPI.openSettings();
-        } catch (error) {
-            console.error('설정 창 열기 실패:', error);
-            showNotification('설정 창 열기에 실패했습니다.', 'error');
-        }
-    });
+    const settingsBtn = document.getElementById('settings-btn');
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', async () => {
+            console.log('설정 버튼 클릭');
+            try {
+                await window.electronAPI.openSettings();
+            } catch (error) {
+                console.error('설정 창 열기 실패:', error);
+                showNotification('설정 창 열기에 실패했습니다.', 'error');
+            }
+        });
+        console.log('설정 버튼 이벤트 리스너 등록 완료');
+    } else {
+        console.error('설정 버튼을 찾을 수 없습니다');
+    }
     
     // 지금 정리하기 버튼
-    document.getElementById('start-cleanup-btn').addEventListener('click', async () => {
-        console.log('지금 정리하기 버튼 클릭');
-        const button = document.getElementById('start-cleanup-btn');
-        const originalText = button.querySelector('.btn-text').textContent;
-        
-        // 버튼 상태 변경
-        button.disabled = true;
-        button.querySelector('.btn-text').textContent = '정리 중...';
-        button.style.opacity = '0.7';
-        
-        try {
-            const result = await window.electronAPI.startCleanup();
-            if (result.success) {
-                console.log('정리 시작 성공');
-                showNotification('정리 작업이 시작되었습니다.', 'success');
+    const startCleanupBtn = document.getElementById('start-cleanup-btn');
+    if (startCleanupBtn) {
+        startCleanupBtn.addEventListener('click', async () => {
+            console.log('지금 정리하기 버튼 클릭');
+            const button = document.getElementById('start-cleanup-btn');
+            const originalText = button.querySelector('.btn-text').textContent;
+            
+            // 버튼 상태 변경
+            button.disabled = true;
+            button.querySelector('.btn-text').textContent = '정리 중...';
+            button.style.opacity = '0.7';
+            
+            try {
+                const result = await window.electronAPI.startCleanup();
+                if (result.success) {
+                    console.log('정리 시작 성공');
+                    showNotification('정리 작업이 시작되었습니다.', 'success');
+                }
+            } catch (error) {
+                console.error('정리 시작 실패:', error);
+                showNotification('정리 작업 시작에 실패했습니다.', 'error');
+            } finally {
+                // 버튼 상태 복원
+                button.disabled = false;
+                button.querySelector('.btn-text').textContent = originalText;
+                button.style.opacity = '1';
             }
-        } catch (error) {
-            console.error('정리 시작 실패:', error);
-            showNotification('정리 작업 시작에 실패했습니다.', 'error');
-        } finally {
-            // 버튼 상태 복원
-            button.disabled = false;
-            button.querySelector('.btn-text').textContent = originalText;
-            button.style.opacity = '1';
-        }
-    });
+        });
+        console.log('지금 정리하기 버튼 이벤트 리스너 등록 완료');
+    } else {
+        console.error('지금 정리하기 버튼을 찾을 수 없습니다');
+    }
     
     // 정리 기준 불러오기 버튼
     document.getElementById('load-rules-btn').addEventListener('click', async () => {
@@ -137,4 +160,70 @@ function showNotification(message, type = 'info') {
 function hideNotification() {
     const notification = document.getElementById('notification');
     notification.className = 'notification hidden';
+}
+
+// 설정 변경 이벤트 리스너 설정
+function setupConfigUpdateListener() {
+    window.electronAPI.onConfigUpdated(async (event, config) => {
+        console.log('설정 변경 감지:', config);
+        
+        // 모니터링 폴더 업데이트
+        if (config.monitoringFolder) {
+            document.getElementById('monitoring-folder').textContent = config.monitoringFolder;
+            
+            // 모니터링 폴더의 파일 개수도 다시 계산
+            await updateFileCount();
+        }
+        
+        // 자동 정리 설정 업데이트
+        if (typeof config.autoOrganize !== 'undefined') {
+            const toggle = document.getElementById('auto-organize-toggle');
+            toggle.checked = config.autoOrganize;
+        }
+        
+        showNotification('설정이 업데이트되었습니다.', 'success');
+    });
+}
+
+// 파일 개수 업데이트 함수
+async function updateFileCount() {
+    try {
+        const stats = await window.electronAPI.getDashboardStats();
+        const currentCount = document.getElementById('pending-files').textContent;
+        const newCount = `${stats.pendingFiles}개`;
+        
+        // 파일 개수가 변경된 경우에만 업데이트
+        if (currentCount !== newCount) {
+            document.getElementById('pending-files').textContent = newCount;
+            console.log(`파일 개수 업데이트: ${currentCount} → ${newCount}`);
+        }
+    } catch (error) {
+        console.error('파일 개수 업데이트 실패:', error);
+    }
+}
+
+// 파일 감지 이벤트 리스너 설정
+function setupFileDetectionListener() {
+    // Electron IPC 이벤트 리스너 (preload API 사용)
+    if (window.electronAPI) {
+        // onFileDetected 이벤트 리스너 추가
+        window.electronAPI.onFileDetected((event, data) => {
+            console.log('새 파일이 감지되었습니다:', data.path);
+            
+            // 대시보드 파일 개수 즉시 업데이트
+            updateFileCount();
+            
+            // 알림 표시
+            const fileName = data.path.split(/[/\\]/).pop(); // 파일명만 추출
+            showNotification(`새 파일이 감지되었습니다: ${fileName}`, 'info');
+            
+            // 파일 개수 애니메이션 효과
+            const pendingFilesElement = document.getElementById('pending-files');
+            pendingFilesElement.style.transform = 'scale(1.1)';
+            pendingFilesElement.style.transition = 'transform 0.3s ease';
+            setTimeout(() => {
+                pendingFilesElement.style.transform = 'scale(1)';
+            }, 300);
+        });
+    }
 }

@@ -21,6 +21,25 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 from loguru import logger
 
+# 한글 인코딩 설정
+import locale
+import codecs
+
+# Windows에서 한글 출력을 위한 인코딩 설정
+if sys.platform == 'win32':
+    # 콘솔 출력 인코딩을 UTF-8로 설정
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.detach())
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.detach())
+    
+    # 로케일 설정
+    try:
+        locale.setlocale(locale.LC_ALL, 'ko_KR.UTF-8')
+    except:
+        try:
+            locale.setlocale(locale.LC_ALL, 'Korean_Korea.949')
+        except:
+            pass
+
 # 프로젝트 루트를 Python 경로에 추가
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
@@ -71,10 +90,16 @@ class PythonWorker:
                 logger.warning("설정이 없습니다. 기본 설정을 사용합니다.")
                 config = self.settings.get_default_config()
             
-            # 파일 감시 시작
+            # 파일 감시 시작 (설정이 없으면 기본값 사용)
             monitoring_folder = config.get('monitoring_folder', 'C:/Downloads')
+            if not monitoring_folder or monitoring_folder == '':
+                monitoring_folder = 'C:/Downloads'
+            
             await self.file_watcher.start_watching(monitoring_folder)
             logger.info(f"파일 감시 시작: {monitoring_folder}")
+            
+            # 상태 출력 (Electron에서 파싱 가능하도록)
+            print(f"STATUS:{json.dumps({'watching': True, 'folder': monitoring_folder})}")
             
             # MCP 클라이언트 초기화
             await self.mcp_client.initialize()

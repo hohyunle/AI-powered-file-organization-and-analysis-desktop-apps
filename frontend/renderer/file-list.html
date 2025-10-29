@@ -14,13 +14,14 @@
                 <div class="header-content">
                     <div class="header-left">
                         <button id="close-file-list-btn" class="back-btn">←</button>
-                        <h1 class="app-title">정리 대기 중인 파일 (47개)</h1>
+                        <h1 class="app-title">정리 대기 중인 파일 (<span class="file-count">0개</span>)</h1>
                     </div>
                     <div class="header-right">
                         <select id="sort-select" class="toolbar-select">
                             <option value="name">이름순</option>
                             <option value="size">크기순</option>
                             <option value="date">날짜순</option>
+                            <option value="type">유형순</option>
                         </select>
                         <div class="view-options">
                             <button id="large-icons-btn" class="view-btn active">🔲</button>
@@ -40,96 +41,48 @@
                 </div>
 
                 <!-- 파일 타입별 통계 -->
-                <section class="file-stats">
+                <section class="file-stats file-type-stats">
                     <div class="stat-item">
                         <span class="stat-label">🖼️ 이미지</span>
-                        <span class="stat-count">18개</span>
+                        <span class="stat-count image-count">0개</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">📄 문서</span>
-                        <span class="stat-count">15개</span>
+                        <span class="stat-count document-count">0개</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">🎬 비디오</span>
-                        <span class="stat-count">8개</span>
+                        <span class="stat-count video-count">0개</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">📦 기타</span>
-                        <span class="stat-count">6개</span>
+                        <span class="stat-count other-count">0개</span>
                     </div>
                 </section>
 
-                <!-- 큰 아이콘 뷰 -->
-                <section id="large-icons-view" class="file-grid-view">
-                    <div class="file-item">
-                        <div class="file-icon">🖼️</div>
-                        <div class="file-name">vacation_photo.jpg</div>
-                        <div class="file-size">2.4 MB</div>
-                        <button class="delete-btn">🗑</button>
+                <!-- 파일 목록 헤더 (자세히 보기에서만 표시) -->
+                <div id="file-list-header" class="file-list-header hidden">
+                    <div class="header-checkbox">
+                        <input type="checkbox" id="select-all-checkbox">
                     </div>
-                    <div class="file-item">
-                        <div class="file-icon">📄</div>
-                        <div class="file-name">proposal.pdf</div>
-                        <div class="file-size">850 KB</div>
-                        <button class="delete-btn">🗑</button>
+                    <div class="header-name sortable" data-sort="name">
+                        파일명 <span class="sort-icon">▲</span>
                     </div>
-                    <div class="file-item">
-                        <div class="file-icon">🎬</div>
-                        <div class="file-name">presentation.mp4</div>
-                        <div class="file-size">15.2 MB</div>
-                        <button class="delete-btn">🗑</button>
+                    <div class="header-size sortable" data-sort="size">
+                        크기 <span class="sort-icon"></span>
                     </div>
-                </section>
+                    <div class="header-type sortable" data-sort="type">
+                        유형 <span class="sort-icon"></span>
+                    </div>
+                    <div class="header-date sortable" data-sort="date">
+                        수정한 날짜 <span class="sort-icon"></span>
+                    </div>
+                </div>
 
-                <!-- 간단히 보기 (리스트) -->
-                <section id="simple-view" class="file-list-view hidden">
-                    <div class="list-item">
-                        <div class="list-icon">🖼️</div>
-                        <div class="list-info">
-                            <div class="list-name">vacation_photo_2024.jpg</div>
-                            <div class="list-details">2.4 MB • 2시간 전</div>
-                        </div>
-                        <button class="delete-btn">🗑</button>
-                    </div>
-                    <div class="list-item">
-                        <div class="list-icon">📄</div>
-                        <div class="list-info">
-                            <div class="list-name">project_proposal.pdf</div>
-                            <div class="list-details">850 KB • 3시간 전</div>
-                        </div>
-                        <button class="delete-btn">🗑</button>
-                    </div>
+                <!-- 파일 목록 컨테이너 -->
+                <section id="file-list-container" class="file-list-container">
+                    <!-- 실제 파일 목록이 여기에 동적으로 추가됩니다 -->
                 </section>
-
-                <!-- 자세히 보기 (테이블) -->
-                <section id="detailed-view" class="file-table-view hidden">
-                    <div class="table-header">
-                        <div class="table-cell">☑️</div>
-                        <div class="table-cell">이름 ▼</div>
-                        <div class="table-cell">크기</div>
-                        <div class="table-cell">유형</div>
-                        <div class="table-cell">수정한 날짜</div>
-                        <div class="table-cell">🗑</div>
-                    </div>
-                    <div class="table-row selected">
-                        <div class="table-cell">☑</div>
-                        <div class="table-cell">🖼️ vacation_photo_2024.jpg</div>
-                        <div class="table-cell">2.4 MB</div>
-                        <div class="table-cell">JPG 이미지</div>
-                        <div class="table-cell">2024-10-12 오후 2:35</div>
-                        <div class="table-cell">🗑</div>
-                    </div>
-                    <div class="table-row">
-                        <div class="table-cell">☐</div>
-                        <div class="table-cell">📄 project_proposal.pdf</div>
-                        <div class="table-cell">850 KB</div>
-                        <div class="table-cell">PDF 문서</div>
-                        <div class="table-cell">2024-10-12 오전 10:22</div>
-                        <div class="table-cell">🗑</div>
-                    </div>
-                </section>
-
-                <div class="more-files">... 외 45개 파일</div>
             </main>
         </div>
     </div>
