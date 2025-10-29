@@ -1,0 +1,27 @@
+# Python Worker 의존성 (간소화 버전)
+# 파일 처리 및 추출
+PyMuPDF>=1.20.0          # PDF 텍스트 추출 (더 유연한 버전)
+python-pptx>=0.6.20       # PowerPoint 파일 처리
+python-docx>=1.0.0        # Word 문서 처리
+openpyxl>=3.0.0           # Excel 파일 처리
+Pillow>=9.0.0             # 이미지 처리
+pytesseract>=0.3.8        # OCR (텍스트 인식)
+
+# 파일 시스템 감시
+watchdog>=2.1.0           # 파일 시스템 이벤트 감시
+
+# 데이터베이스
+psycopg2-binary>=2.9.0    # PostgreSQL 연결
+SQLAlchemy>=1.4.0         # ORM
+
+# AI 및 MCP 연동
+httpx>=0.24.0             # HTTP 클라이언트 (MCP 통신용)
+pydantic>=1.10.0          # 데이터 검증
+
+# 유틸리티
+python-dotenv>=0.19.0     # 환경 변수 관리
+loguru>=0.6.0             # 로깅
+
+# 개발 및 테스트
+pytest>=7.0.0            # 테스트 프레임워크
+pytest-asyncio>=0.20.0   # 비동기 테스트

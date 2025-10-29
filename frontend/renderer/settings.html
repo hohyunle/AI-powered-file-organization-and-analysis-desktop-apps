@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>설정 - AI 파일 정리 도우미</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="main-dashboard">
+            <!-- 헤더 -->
+            <header class="header">
+                <div class="header-content">
+                    <div class="header-left">
+                        <button id="close-settings-btn" class="back-btn">←</button>
+                        <h1 class="app-title">⚙️ 설정</h1>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 메인 콘텐츠 -->
+            <main class="main-content">
+                <!-- 폴더 설정 -->
+                <section class="settings-section">
+                    <h2 class="section-title">📁 모니터링 폴더</h2>
+                    <div class="input-group">
+                        <input type="text" id="monitoring-folder-input" value="C:/Downloads" readonly>
+                        <button id="select-monitoring-folder-btn" class="btn-primary">찾아보기</button>
+                    </div>
+                    <p class="input-description">정리하고 싶은 폴더를 선택하세요.</p>
+                </section>
+
+                <section class="settings-section">
+                    <h2 class="section-title">📁 정리 지정 폴더</h2>
+                    <div class="input-group">
+                        <input type="text" id="moving-folder-input" value="C:\Users\Desktop\homework" readonly>
+                        <button id="select-moving-folder-btn" class="btn-primary">찾아보기</button>
+                    </div>
+                    <p class="input-description">정리된 파일이 저장될 폴더를 선택하세요.</p>
+                </section>
+
+                <!-- 자동 정리 설정 -->
+                <section class="settings-section">
+                    <h2 class="section-title">⚡ 자동 정리 조건</h2>
+                    <div class="auto-option">
+                        <div class="option-text">
+                            <span>파일이</span>
+                            <select id="threshold-select">
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="200">200</option>
+                            </select>
+                            <span>개 이상 쌓이면 자동 제안</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="auto-organize-toggle-settings" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    
+                    <div class="auto-option">
+                        <div class="option-text">
+                            <span>매일</span>
+                            <select id="schedule-select">
+                                <option value="midnight">자정</option>
+                                <option value="morning">오전 6시</option>
+                                <option value="evening">오후 6시</option>
+                            </select>
+                            <span>에 자동 정리</span>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="schedule-toggle">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- 알림 메시지 -->
+    <div id="notification" class="notification hidden">
+        <div class="notification-content">
+            <span id="notification-message"></span>
+            <button id="notification-close" class="notification-close">×</button>
+        </div>
+    </div>
+
+    <script src="settings.js"></script>
+</body>
+</html>

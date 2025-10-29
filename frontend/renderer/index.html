@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 파일 정리 도우미</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="main-dashboard">
+            <!-- 헤더 -->
+            <header class="header">
+                <div class="header-content">
+                    <h1 class="app-title">📂 파일 정리 도우미</h1>
+                    <button id="settings-btn" class="settings-btn">⚙️ 설정</button>
+                </div>
+            </header>
+
+            <!-- 메인 콘텐츠 -->
+            <main class="main-content">
+                <!-- 상태 카드 -->
+                <section class="status-section">
+                    <h2 class="status-title">📊 모니터링 상태</h2>
+                    <div class="status-info-grid">
+                        <div class="status-info monitoring-folder">
+                            <div class="info-label">모니터링 폴더</div>
+                            <div class="info-value" id="monitoring-folder">C:/Downloads</div>
+                        </div>
+                        
+                        <div class="status-info file-count">
+                            <div class="info-label">대기 중인 파일</div>
+                            <div class="info-value" id="pending-files">47개</div>
+                        </div>
+                        
+                        <div class="status-info last-organized">
+                            <div class="info-label">마지막 정리</div>
+                            <div class="info-value" id="last-organized">2시간 전</div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 빠른 액션 버튼들 -->
+                <section class="quick-actions">
+                    <button id="start-cleanup-btn" class="action-btn primary">
+                        <span class="btn-icon">🚀</span>
+                        <span class="btn-text">지금 정리하기</span>
+                    </button>
+                    
+                    <button id="load-rules-btn" class="action-btn secondary">
+                        <span class="btn-icon">📋</span>
+                        <span class="btn-text">정리 기준 불러오기</span>
+                    </button>
+                    
+                    <button id="view-files-btn" class="action-btn secondary">
+                        <span class="btn-icon">📋</span>
+                        <span class="btn-text">파일 목록 보기</span>
+                    </button>
+                </section>
+
+                <!-- 자동 정리 설정 -->
+                <section class="auto-organize">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <h3>⚡ 자동 정리 조건</h3>
+                            <p>파일이 50개 이상 쌓이면 자동으로 정리 제안</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="auto-organize-toggle" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+
+    <!-- 알림 메시지 -->
+    <div id="notification" class="notification hidden">
+        <div class="notification-content">
+            <span id="notification-message"></span>
+            <button id="notification-close" class="notification-close">×</button>
+        </div>
+    </div>
+
+    <script src="renderer.js"></script>
+</body>
+</html>
